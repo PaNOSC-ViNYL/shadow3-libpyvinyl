@@ -62,7 +62,6 @@ class Shadow3Calculator(BaseCalculator):
             value = oe0_dict[key]
             if isinstance(oe0_dict[key], bytes):
                 value = value.decode("utf-8")
-                print(">>>decoded source", key, type(value))
 
             self.parameters["oe0."+key] = (value)
 
@@ -86,14 +85,11 @@ class Shadow3Calculator(BaseCalculator):
                 value = oe_i_dict[key]
                 if isinstance(value, bytes):
                     value = value.decode("utf-8")
-                    # self.parameters["oe%d.%s" % (i+1, key)] = (value.decode("utf-8"))
-                    print(">>>>> decoded oe 1: ", key)
                 elif isinstance(value, numpy.ndarray):
                     value_new = []
                     for list_item in value:
                         if isinstance(list_item, bytes):
                             list_item = list_item.decode("utf-8")
-                            print(">>>>> decoded oe list: ", key, list_item)
                         value_new.append(list_item)
                     value = numpy.array(value_new)
 
@@ -145,7 +141,6 @@ class Shadow3Calculator(BaseCalculator):
                         elif isinstance(value, numpy.ndarray):
                             for list_item in value:
                                 if isinstance(list_item, str):
-                                    print("?>>>>>>>>>>", value)
                                     list_item = bytes(list_item, 'UTF-8')
                         setattr(oe_i, name, value)
                     except:
