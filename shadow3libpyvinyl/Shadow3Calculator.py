@@ -1,6 +1,8 @@
 from libpyvinyl.BaseCalculator import BaseCalculator, CalculatorParameters
+from libpyvinyl.Parameters.Parameter import Parameter
 import Shadow
 import inspect
+import numpy
 
 class Shadow3Calculator(BaseCalculator):
     def __init__(self,
@@ -21,14 +23,29 @@ class Shadow3Calculator(BaseCalculator):
             source=None,
             beamline=[],
             number_of_optical_elements = 0,
-            native=None,
+            json=None,
             ):
 
+        #
         # native format from json
-        if native is not None:
-            self.parameters = native
+        #
+        if json is not None:
+            self.parameters = CalculatorParameters.from_json(json)
+            names = []
+            for parameter in self.parameters:
+                names.append(parameter.name)
+
+            number_of_optical_elements = 0
+            for i in range(1,100):
+                if ("oe%d.DUMMY" % i) in names:
+                    number_of_optical_elements += 1
+            self.number_of_optical_elements = number_of_optical_elements  # todo automatize counted for json files
             return
 
+        #
+        #
+        #
+        self.number_of_optical_elements = number_of_optical_elements # todo automatize counted for json files
         # source
         if isinstance(source, Shadow.Source):
             oe0 = source
@@ -42,10 +59,12 @@ class Shadow3Calculator(BaseCalculator):
 
         for key in oe0_dict.keys():
             self.parameters.new_parameter("oe0."+key)
+            value = oe0_dict[key]
             if isinstance(oe0_dict[key], bytes):
-                self.parameters["oe0."+key].set_value(oe0_dict[key].decode("utf-8"))
-            else:
-                self.parameters["oe0."+key].set_value(oe0_dict[key])
+                value = value.decode("utf-8")
+                print(">>>decoded source", key, type(value))
+
+            self.parameters["oe0."+key] = (value)
 
         # beamline
         if len(beamline) == 0 and number_of_optical_elements > 0:
@@ -64,12 +83,24 @@ class Shadow3Calculator(BaseCalculator):
 
             for key in oe_i_dict.keys():
                 self.parameters.new_parameter("oe%d.%s" % (i+1, key))
-                if isinstance(oe_i_dict[key], bytes):
-                    self.parameters["oe%d.%s" % (i+1, key)].set_value(oe_i_dict[key].decode("utf-8"))
-                else:
-                    self.parameters["oe%d.%s" % (i+1, key)].set_value(oe_i_dict[key])
+                value = oe_i_dict[key]
+                if isinstance(value, bytes):
+                    value = value.decode("utf-8")
+                    # self.parameters["oe%d.%s" % (i+1, key)] = (value.decode("utf-8"))
+                    print(">>>>> decoded oe 1: ", key)
+                elif isinstance(value, numpy.ndarray):
+                    value_new = []
+                    for list_item in value:
+                        if isinstance(list_item, bytes):
+                            list_item = list_item.decode("utf-8")
+                            print(">>>>> decoded oe list: ", key, list_item)
+                        value_new.append(list_item)
+                    value = numpy.array(value_new)
 
-        self.number_of_optical_elements = number_of_optical_elements
+
+                self.parameters["oe%d.%s" % (i+1, key)] = value
+
+
 
     def __get_valiable_list(self, object1):
         """
@@ -82,7 +113,7 @@ class Shadow3Calculator(BaseCalculator):
                 mylist.append(var[0])
         return(mylist)
 
-    def backengine(self):
+    def backengine(self,write_start_files_root=None):
         beam = Shadow.Beam()
         oe0 = Shadow.Source()
 
@@ -98,7 +129,8 @@ class Shadow3Calculator(BaseCalculator):
             except:
                 raise Exception("Error setting parameters name %s" % name)
 
-
+        if write_start_files_root is not None:
+            oe0.write(write_start_files_root + ".00")
         beam.genSource(oe0)
 
         if self.number_of_optical_elements > 0:
@@ -110,10 +142,17 @@ class Shadow3Calculator(BaseCalculator):
                         value = self.parameters["oe%d.%s" % (i+1, name)].value
                         if isinstance(value, str):
                             value = bytes(value, 'UTF-8')
+                        elif isinstance(value, numpy.ndarray):
+                            for list_item in value:
+                                if isinstance(list_item, str):
+                                    print("?>>>>>>>>>>", value)
+                                    list_item = bytes(list_item, 'UTF-8')
                         setattr(oe_i, name, value)
                     except:
                         raise Exception("Error setting parameters name %s" % name)
 
+                if write_start_files_root is not None:
+                    oe_i.write("%s.%d" % (write_start_files_root, i+1))
                 beam.traceOE(oe_i, i+1)
 
         self._set_data(beam)

@@ -1,83 +1,73 @@
-from libpyvinyl.BaseCalculator import CalculatorParameters as Parameters
-
-
-import sys
 
 
 from shadow3libpyvinyl.Shadow3Calculator import Shadow3Calculator
 
 
-calculator  = Shadow3Calculator("")
+if True:
+    calculator  = Shadow3Calculator("")
 
-### Setup the parameters
-calculator.setParams(number_of_optical_elements=1)
-
-print(">>>>>DEFAULTS: ", calculator.parameters, "\n\n\n")
-
-calculator.parameters["oe0.FDISTR"].value = 3
-calculator.parameters["oe0.F_COLOR"].value = 3
-calculator.parameters["oe0.F_PHOT"].value = 0
-calculator.parameters["oe0.HDIV1"].value = 0.0
-calculator.parameters["oe0.HDIV2"].value = 0.0
-calculator.parameters["oe0.NPOINT"].value = 10000
-calculator.parameters["oe0.PH1"].value = 8799.999
-calculator.parameters["oe0.PH2"].value = 8799.999
-calculator.parameters["oe0.SIGDIX"].value = 4.728541797631135e-06
-calculator.parameters["oe0.SIGDIZ"].value = 4.095010077148124e-06
-calculator.parameters["oe0.SIGMAX"].value = 0.0015810951361940363
-calculator.parameters["oe0.SIGMAZ"].value = 0.0006681031579752021
-calculator.parameters["oe0.VDIV1"].value = 0.0
-calculator.parameters["oe0.VDIV2"].value = 0.0
-
-calculator.parameters["oe1.DUMMY"].value = 1.0
-calculator.parameters["oe1.FMIRR"].value = 3
-calculator.parameters["oe1.FWRITE"].value = 1
-calculator.parameters["oe1.T_IMAGE"].value = 1000.0
-calculator.parameters["oe1.T_INCIDENCE"].value = 89.828
-calculator.parameters["oe1.T_REFLECTION"].value = 89.828
-calculator.parameters["oe1.T_SOURCE"].value = 4000.0
+    calculator.setParams(number_of_optical_elements=1)
 
 
-### Run the backengine
-calculator.backengine()
+    calculator.parameters["oe0.FDISTR"]       = 3
+    calculator.parameters["oe0.F_COLOR"]      = 3
+    calculator.parameters["oe0.F_PHOT"]       = 0
+    calculator.parameters["oe0.HDIV1"]        = 0.0
+    calculator.parameters["oe0.HDIV2"]        = 0.0
+    calculator.parameters["oe0.NPOINT"]       = 10000
+    calculator.parameters["oe0.PH1"]          = 8799.999
+    calculator.parameters["oe0.PH2"]          = 8799.999
+    calculator.parameters["oe0.SIGDIX"]       = 4.728541797631135e-06
+    calculator.parameters["oe0.SIGDIZ"]       = 4.095010077148124e-06
+    calculator.parameters["oe0.SIGMAX"]       = 0.0015810951361940363
+    calculator.parameters["oe0.SIGMAZ"]       = 0.0006681031579752021
+    calculator.parameters["oe0.VDIV1"]        = 0.0
+    calculator.parameters["oe0.VDIV2"]        = 0.0
+    calculator.parameters["oe1.DUMMY"]        = 1.0
+    calculator.parameters["oe1.FMIRR"]        = 3
+    calculator.parameters["oe1.FWRITE"]       = 1
+    calculator.parameters["oe1.T_IMAGE"]      = 1000.0
+    calculator.parameters["oe1.T_INCIDENCE"]  = 89.828
+    calculator.parameters["oe1.T_REFLECTION"] = 89.828
+    calculator.parameters["oe1.T_SOURCE"]     = 4000.0
 
 
-import Shadow
-from srxraylib.plot.gol import set_qt
-set_qt()
-Shadow.ShadowTools.plotxy(calculator.data, 1, 3, nbins=101, nolost=1, title="Real space")
-
-### Look at the data and store as hdf5
-print(calculator.data)
-calculator.saveH5("tmp.h5")
+    ### Run the backengine
+    calculator.backengine(write_start_files_root="start")
 
 
+    #
+    # make plot
+    #
+    import Shadow
+    try:
+        from srxraylib.plot.gol import set_qt
+        set_qt()
+    except:
+        pass
 
-if True: # errors here!!!!
+    Shadow.ShadowTools.plotxy(calculator.data, 1, 3, nbins=101, nolost=1, title="Real space")
 
-    ### Save the parameters to a human readable json file.
-    print(calculator.parameters["oe1.CCC"])
+
+    #
+    # save files
+    calculator.saveH5("tmp.h5")
     calculator.parameters.to_json("my_parameters.json")
+    print(calculator.parameters)
 
-    ### Save calculator to binary dump.
-    # dumpfile = calculator.dump()
+#
+# retrieve from json
+#
+if True:
 
-    ########################################################################################################################
+    new_calculator = Shadow3Calculator("from file")
+    new_calculator.setParams(number_of_optical_elements=1, json="my_parameters.json")
 
-    ### Load back parameters
-
-    new_parameters = Parameters.from_json("my_parameters.json")
-
-    new_parameters["oe0.NPOINT"] = 10000
-
-    print('oe0.NPOINT:', new_parameters['oe0.NPOINT'])
-
-    new_calculator  = Shadow3Calculator("", output_path="out.h5")
-
-    new_calculator.setParams(native=new_parameters)
-
-    new_calculator.backengine()
-
-    new_calculator.saveH5("tmp.h5")
+    new_calculator.backengine(write_start_files_root="start_new")
+    #
+    # new_calculator.saveH5("tmp.h5")
+    #
+    import Shadow
+    Shadow.ShadowTools.plotxy(new_calculator.data, 1, 3, nbins=101, nolost=1, title="Real space")
 
 
