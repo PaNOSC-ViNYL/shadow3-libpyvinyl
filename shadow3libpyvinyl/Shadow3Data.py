@@ -1,7 +1,11 @@
 from libpyvinyl.BaseData import BaseData
 from libpyvinyl.BaseFormat import BaseFormat
+import inspect
+import numpy
+
 import h5py
 import numpy as np
+
 
 from libpyvinyl.BaseData import DataCollection
 import Shadow
@@ -35,27 +39,9 @@ class Shadow3Data(BaseData):
     def supported_formats(self):
         format_dict = {}
         ### DataClass developer's job start
-        # self._add_ioformat(format_dict, TXTFormat)
-        # self._add_ioformat(format_dict, H5Format)
         self._add_ioformat(format_dict, Shadow3GfileFormat)
         ### DataClass developer's job end
         return format_dict
-
-    # @classmethod
-    # def from_file(cls, filename: str, format_class, key, **kwargs):
-    #     """Create the data class by the file in the `format`."""
-    #     return cls(
-    #         key,
-    #         filename=filename,
-    #         file_format_class=format_class,
-    #         file_format_kwargs=kwargs,
-    #     )
-    #
-    # @classmethod
-    # def from_dict(cls, data_dict, key):
-    #     """Create the data class by a python dictionary."""
-    #     return cls(key, data_dict=data_dict)
-
 
 
 class Shadow3GfileFormat(BaseFormat):
@@ -77,21 +63,57 @@ class Shadow3GfileFormat(BaseFormat):
     def read(cls, filename: str) -> dict:
         """Read the data from the file with the `filename` to a dictionary. The dictionary will
         be used by its corresponding data class."""
-        try:
+        flag = cls.shadow3_file_type(filename)
+        if flag == 0:
             oe0 = Shadow.Source()
             oe0.load(filename)
             return oe0.to_dictionary()
-        except:
-            try:
-                oe1 = Shadow.OE()
-                oe1.load(filename)
-                return oe1.to_dictionary()
-            except:
-                raise Exception("Error loading file %s" %filename )
+        elif flag == 1:
+            oe1 = Shadow.OE()
+            oe1.load(filename)
+            return oe1.to_dictionary()
+        else:
+            raise Exception("Error loading file %s (flag=%d)" % (filename, flag) )
 
     @classmethod
     def write(cls, object: Shadow3Data, filename: str, key: str = None):
-        print("Not yet implamented")
+
+
+        dict1 = object.get_data()
+        keys = dict1.keys()
+        if 'F_WIGGLER' in keys:
+            shadow_object = Shadow.Source()
+            print(">>>>>>>>>>>> source")
+        elif 'F_GRATING' in keys:
+            shadow_object = Shadow.OE()
+            print(">>>>>>>>>>>> oe")
+        else:
+            raise Exception("Mismatch data")
+
+        i_list = cls.__get_valiable_list(shadow_object)
+
+        for name in i_list:
+            try:
+                value = dict1[name]
+                if isinstance(value, str):
+                    value = bytes(value, 'UTF-8')
+                elif isinstance(value, numpy.ndarray):
+                    for list_item in value:
+                        if isinstance(list_item, str):
+                            list_item = bytes(list_item, 'UTF-8')
+                setattr(shadow_object, name, value)
+            except:
+                raise Exception("Error setting parameters name %s" % name)
+
+        shadow_object.write(filename)
+
+        if key is None:
+            original_key = object.key
+            key = original_key + "_to_Shadow3GfileFormat"
+            return object.from_file(filename, cls, key)
+        else:
+            return object.from_file(filename, cls, key)
+
         # """Save the data with the `filename`."""
         # data_dict = object.get_data()
         # number = data_dict["number"]
@@ -110,6 +132,29 @@ class Shadow3GfileFormat(BaseFormat):
         # AFormat, BFormat
         # Redefine this `direct_convert_formats` for a concrete format class
         return []
+
+    @staticmethod
+    def shadow3_file_type(filename):
+        with open(filename) as f:
+            if 'F_WIGGLER' in f.read():
+                return 0
+        with open(filename) as f:
+            if 'F_GRATING' in f.read():
+                return 1
+        return -1
+
+    @staticmethod
+    def __get_valiable_list(object1):
+        """
+        returns a list of the Shadow.Source or Shadow.OE variables
+        """
+        mem = inspect.getmembers(object1)
+        mylist = []
+        for i,var in enumerate(mem):
+            if var[0].isupper():
+                mylist.append(var[0])
+        return(mylist)
+
 
 # class TXTFormat(BaseFormat):
 #     def __init__(self) -> None:
@@ -294,8 +339,18 @@ if __name__ == "__main__":
 
     # file i/o
     Shadow3Data.list_formats()
-    oe1 = Shadow.OE()
-    oe1.write("tmp.dat")
+    oe0 = Shadow.Source()
+    oe0.write("tmp0.dat")
     test_data = Shadow3Data(key="test_data")
-    test_data.set_file("tmp.dat", Shadow3GfileFormat)
-    print(test_data.get_data())
+    test_data.set_file("tmp0.dat", Shadow3GfileFormat)
+    # print(test_data.get_data())
+
+    oe1 = Shadow.OE()
+    oe1.write("tmp1.dat")
+    test_data = Shadow3Data(key="test_data")
+    test_data.set_file("tmp1.dat", Shadow3GfileFormat)
+    test_data.write('tmp11.dat', Shadow3GfileFormat)
+    tmp = Shadow.OE()
+    tmp.load('tmp11.dat')
+    # print(test_data.get_data())
+
