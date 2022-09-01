@@ -11,8 +11,8 @@ except AttributeError:
 
 NAME = 'shadow3libpyvinyl'
 
-VERSION = '1.0.2'
-ISRELEASED = False
+VERSION = '1.0.3'
+ISRELEASED = True
 
 DESCRIPTION = 'libpyvinyl interface to shadow3'
 README_FILE = os.path.join(os.path.dirname(__file__), 'README.md')
