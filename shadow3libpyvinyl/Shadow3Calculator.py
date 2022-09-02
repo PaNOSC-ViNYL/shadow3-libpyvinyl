@@ -66,11 +66,14 @@ class Shadow3Calculator(BaseCalculator):
 
         print(d1_keys_list, d1_keys_oe)
 
-        number_of_optical_elements = 0
-        for i in range(1,11):
+
+        found_optical_elements = []
+        for i in range(1,501):
             if ("oe%d.DUMMY" % i) in d1.keys():
-                number_of_optical_elements += 1
-        print("number of optical elements", number_of_optical_elements)
+                found_optical_elements.append(i)
+
+        number_of_optical_elements = len(found_optical_elements)
+        print("number of optical elements", number_of_optical_elements, len(found_optical_elements), found_optical_elements)
 
         if 0 in d1_keys_oe: # source input found
             oe0 = Shadow.Source()
@@ -98,13 +101,13 @@ class Shadow3Calculator(BaseCalculator):
 
 
         if number_of_optical_elements > 0:
-            for i in range(number_of_optical_elements):
+            for noe in found_optical_elements:
                 oe_i = Shadow.OE()
                 for j in range(len(d1_keys_list)):
-                    if d1_keys_oe[j] == (i+1):
+                    if d1_keys_oe[j] == noe:
                         name = d1_keys_list[j]
                         try:
-                            value = self.parameters["oe%d.%s" % (i+1, name)].value
+                            value = self.parameters["oe%d.%s" % (noe, name)].value
                             if isinstance(value, str):
                                 value = bytes(value, 'UTF-8')
                             elif isinstance(value, numpy.ndarray):
@@ -115,7 +118,7 @@ class Shadow3Calculator(BaseCalculator):
                         except:
                             raise Exception("Error setting parameters name %s" % name)
 
-                beam.traceOE(oe_i, i+1)
+                beam.traceOE(oe_i, noe)
 
         key = self.output_keys[0]
         output_data = self.output[key]

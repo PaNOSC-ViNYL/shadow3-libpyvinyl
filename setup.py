@@ -11,7 +11,7 @@ except AttributeError:
 
 NAME = 'shadow3libpyvinyl'
 
-VERSION = '1.0.3'
+VERSION = '1.0.4'
 ISRELEASED = True
 
 DESCRIPTION = 'libpyvinyl interface to shadow3'

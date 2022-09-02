@@ -38,6 +38,16 @@ class Shadow3Data(BaseData):
         ### DataClass developer's job end
         return format_dict
 
+    def duplicate(self):
+
+        return Shadow3Data(
+                 self.key,
+                 data_dict={"nrays": self.get_data()["nrays"], "rays": self.get_data()["rays"].copy()},
+                 filename=self.filename,
+                 file_format_class=self.file_format_class,
+                 file_format_kwargs=self.file_format_kwargs)
+
+
 
 class Shadow3BeamFormat(BaseFormat):
     def __init__(self) -> None:
@@ -128,48 +138,69 @@ class Shadow3OpenPMDFormat(BaseFormat):
 if __name__ == "__main__":
 
 
-    # Test if the definition works
-    data = Shadow3Data(key="test")
-    print(data.key)
-    print(data.expected_data)
+    # # Test if the definition works
+    # data = Shadow3Data(key="test")
+    # print(data.key)
+    # print(data.expected_data)
+    #
+    # #
+    # # add test data
+    # #
+    # b = Shadow.Beam()
+    # b.genSource( Shadow.Source() )
+    # data.set_dict( {"nrays":b.nrays(), "rays":b.rays})
+    #
+    # # print(data.get_data())
+    #
+    #
+    # # file i/o
+    #
+    # Shadow3Data.list_formats()
+    #
+    # # write RAW
+    # data.write('tmp11.dat', Shadow3BeamFormat)
+    #
+    # # read RAW
+    # loaded_data = Shadow3Data(key="test_data",
+    #                         data_dict=None,
+    #                         filename=None,
+    #                         file_format_class=None,
+    #                         file_format_kwargs=None
+    #                         )
+    # loaded_data.set_file("tmp11.dat", Shadow3BeamFormat)
+    # print(loaded_data.get_data()["nrays"], loaded_data.get_data()["rays"].shape)
+    #
+    # # write OpenPMD
+    # data.write('tmp11.h5', Shadow3OpenPMDFormat)
+    #
+    # # read OpenPMD
+    # loaded_data = Shadow3Data(key="test_data",
+    #                         data_dict=None,
+    #                         filename=None,
+    #                         file_format_class=None,
+    #                         file_format_kwargs=None
+    #                         )
+    # loaded_data.set_file("tmp11.h5", Shadow3OpenPMDFormat)
+    # print(loaded_data.get_data()["nrays"], loaded_data.get_data()["rays"].shape)
 
     #
-    # add test data
+    # copy/duplicate data
     #
     b = Shadow.Beam()
     b.genSource( Shadow.Source() )
+    data = Shadow3Data(key="test")
     data.set_dict( {"nrays":b.nrays(), "rays":b.rays})
 
-    # print(data.get_data())
+    print(data.get_data())
+
+    data2 = data.duplicate()
+
+    rays = data.get_data()["rays"]
+    rays *= 0
+
+    print(data.get_data())
+    print(data2.get_data())
 
 
-    # file i/o
 
-    Shadow3Data.list_formats()
-
-    # write RAW
-    data.write('tmp11.dat', Shadow3BeamFormat)
-
-    # read RAW
-    loaded_data = Shadow3Data(key="test_data",
-                            data_dict=None,
-                            filename=None,
-                            file_format_class=None,
-                            file_format_kwargs=None
-                            )
-    loaded_data.set_file("tmp11.dat", Shadow3BeamFormat)
-    print(loaded_data.get_data()["nrays"], loaded_data.get_data()["rays"].shape)
-
-    # write OpenPMD
-    data.write('tmp11.h5', Shadow3OpenPMDFormat)
-
-    # read OpenPMD
-    loaded_data = Shadow3Data(key="test_data",
-                            data_dict=None,
-                            filename=None,
-                            file_format_class=None,
-                            file_format_kwargs=None
-                            )
-    loaded_data.set_file("tmp11.h5", Shadow3OpenPMDFormat)
-    print(loaded_data.get_data()["nrays"], loaded_data.get_data()["rays"].shape)
 
