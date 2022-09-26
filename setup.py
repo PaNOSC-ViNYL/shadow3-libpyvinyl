@@ -11,7 +11,7 @@ except AttributeError:
 
 NAME = 'shadow3libpyvinyl'
 
-VERSION = '1.0.4'
+VERSION = '1.0.5'
 ISRELEASED = True
 
 DESCRIPTION = 'libpyvinyl interface to shadow3'
@@ -52,6 +52,7 @@ CLASSIFIERS = (
 
 INSTALL_REQUIRES = (
     'libpyvinyl',
+    'openpmd-api~=0.14.0',
 )
 
 SETUP_REQUIRES = (
